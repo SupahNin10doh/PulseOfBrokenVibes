@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pulse of Broken Vibes - Silk Timeline</title>
+  <meta name="description" content="A silk-smooth pulse timeline of vibe-coded product flameouts. Play, pause, zoom, and dive into skull-marked stories. Single-file HTML with real sources." />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter","ui-sans-serif","system-ui","-apple-system","Segoe UI","Roboto","Ubuntu","Noto Sans","Helvetica Neue","Arial","sans-serif"],
+            display: ["Inter","ui-sans-serif","system-ui"],
+          },
+          colors: {
+            pulse: {
+              50:"#f2f7ff",100:"#e6efff",200:"#bfd7ff",300:"#9abfff",400:"#73a6ff",500:"#4c8dff",
+              600:"#2e73f0",700:"#1e59cc",800:"#1646a3",900:"#10357c",950:"#0b2556"
+            },
+            roseglass: {400:"#f472b6",500:"#ec4899",600:"#db2777"},
+            ink: {500:"#0f172a",600:"#0b1222",700:"#070d18"},
+          },
+          boxShadow: {
+            glow:"0 0 0 2px rgba(76,141,255,0.2), 0 10px 30px rgba(76,141,255,0.25)",
+            card:"0 10px 40px rgba(0,0,0,0.25)",
+          },
+          keyframes: {
+            shimmer:{'0%':{backgroundPosition:'0% 50%'},'100%':{backgroundPosition:'100% 50%'}},
+            pulseglow:{'0%,100%':{opacity:.45},'50%':{opacity:.95}},
+          },
+          animation: {
+            shimmer:'shimmer 12s linear infinite',
+            pulseglow:'pulseglow 4s ease-in-out infinite',
+          }
+        }
+      },
+      darkMode: 'class'
+    }
+  </script>
+
+  <!-- Anime.js -->
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+
+  <style>
+    :root {
+      --bg-0: #0a0f1a;
+      --bg-2: #0f172a;
+      --ring: rgba(76,141,255,0.35);
+      --silk-glass: rgba(255,255,255,0.06);
+      --silk-stroke: rgba(255,255,255,0.08);
+      --grid-line: rgba(148,163,184,0.15);
+    }
+    html, body { height: 100%; }
+    body { background: radial-gradient(1200px 600px at 70% -10%, rgba(76,141,255,0.12), transparent 60%), linear-gradient(180deg, var(--bg-0), var(--bg-2)); }
+    .surface { background: var(--silk-glass); backdrop-filter: blur(10px); border: 1px solid var(--silk-stroke); }
+    .ring-focus { box-shadow: 0 0 0 4px var(--ring); }
+    #timelineWrap { mask-image: radial-gradient(120% 70% at 50% 35%, black, transparent 85%); }
+    .tooltip { position:absolute; pointer-events:none; transform: translate(-50%,-120%); white-space:nowrap; }
+    .no-scrollbar::-webkit-scrollbar { display:none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    a.source-link { text-decoration: underline; }
+  </style>
+</head>
+<body class="text-slate-200 antialiased selection:bg-pulse-500/30">
+  <!-- Backdrop orbs -->
+  <div class="pointer-events-none fixed inset-0 -z-10">
+    <div class="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-pulse-500/20 blur-3xl animate-pulseglow"></div>
+    <div class="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-roseglass-500/20 blur-3xl animate-pulseglow" style="animation-delay:1.2s"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40">
+    <div class="surface mx-auto mt-4 w-[min(1200px,94%)] rounded-2xl shadow-card">
+      <div class="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div class="flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-pulse-500 to-roseglass-500 shadow-glow">
+            <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6">
+              <path d="M12 2C7 2 3 6 3 11c0 3.5 2 6.5 5 7.8V21a1 1 0 0 0 1 1h1v-2h4v2h1a1 1 0 0 0 1-1v-2.2c3-1.3 5-4.3 5-7.8 0-5-4-9-9-9Zm-3 9h2v2H9v-2Zm6 0h-2v2h2v-2Z" fill="#fff"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="font-display text-xl sm:text-2xl">Pulse of Broken Vibes</h1>
+            <p class="text-xs text-slate-400">Silk timeline of vibe-coded product flameouts</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnTheme" class="surface hover:bg-white/10 rounded-lg px-3 py-2 text-sm">Theme</button>
+          <a id="btnDownload" href="#" class="surface hover:bg-white/10 rounded-lg px-3 py-2 text-sm">Download HTML</a>
+        </div>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-3 sm:px-6">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+          <div class="relative">
+            <input id="search" type="text" placeholder="Search stories, creators, orgs" class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pr-10 text-sm outline-none focus:ring-4 focus:ring-pulse-500/30" />
+            <svg class="pointer-events-none absolute right-3 top-2.5 h-5 w-5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 21l-4.3-4.3"/><circle cx="10.5" cy="10.5" r="7"/></svg>
+          </div>
+
+          <div class="flex items-center gap-2 justify-start md:justify-end">
+            <div class="surface rounded-xl px-3 py-2 text-xs">Zoom <input id="zoom" type="range" min="0.6" max="3" step="0.1" class="ml-2 align-middle"/></div>
+            <div class="surface rounded-xl px-3 py-2 text-xs">Speed <input id="speed" type="range" min="0.5" max="2" step="0.1" class="ml-2 align-middle"/></div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btnPlay" class="surface rounded-xl px-4 py-2 text-sm">Play</button>
+            <button id="btnPause" class="surface rounded-xl px-4 py-2 text-sm">Pause</button>
+          </div>
+
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <span class="text-xs text-slate-400">Filters:</span>
+            <button data-filter="all" class="chip active">All</button>
+            <button data-filter="reddit" class="chip">Reddit</button>
+            <button data-filter="x" class="chip">X</button>
+            <button data-filter="linkedin" class="chip">LinkedIn</button>
+            <button data-filter="blog" class="chip">Blogs</button>
+            <button data-filter="video" class="chip">Video</button>
+            <span class="mx-2 text-slate-500">|</span>
+            <label class="text-xs flex items-center gap-2 surface rounded-xl px-3 py-2">
+              <input id="liveHN" type="checkbox" class="accent-pulse-500"> Live HN
+            </label>
+            <label class="text-xs flex items-center gap-2 surface rounded-xl px-3 py-2">
+              <input id="liveRSS" type="checkbox" class="accent-pulse-500"> Live RSS
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- THEME PANEL -->
+  <section id="themePanel" class="mx-auto mt-4 hidden w-[min(1200px,94%)] rounded-2xl surface p-6 shadow-card">
+    <h2 class="mb-3 font-display text-lg">Theme swatch</h2>
+    <p class="mb-4 text-sm text-slate-400">Vibe: nocturne silk, electric pulse, roseglass accents. Neutral ink foundation. Accessible contrast. Motion is soft and elastic.</p>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div class="rounded-xl p-4" style="background:linear-gradient(135deg,#4c8dff,#ec4899)">
+        <div class="text-xs">Gradient</div>
+        <div class="text-[10px] opacity-80">#4c8dff → #ec4899</div>
+      </div>
+      <div class="rounded-xl bg-pulse-500 p-4">
+        <div class="text-xs">Pulse 500</div>
+        <div class="text-[10px] opacity-80">#4c8dff</div>
+      </div>
+      <div class="rounded-xl bg-roseglass-500 p-4">
+        <div class="text-xs">Roseglass 500</div>
+        <div class="text-[10px] opacity-80">#ec4899</div>
+      </div>
+      <div class="rounded-xl bg-ink-600 p-4">
+        <div class="text-xs">Ink 600</div>
+        <div class="text-[10px] opacity-80">#0b1222</div>
+      </div>
+    </div>
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-6">
+      <div class="surface rounded-xl p-3 text-xs">Border glass</div>
+      <div class="surface rounded-xl p-3 text-xs">Card glass</div>
+      <div class="surface rounded-xl p-3 text-xs">Controls</div>
+      <div class="surface rounded-xl p-3 text-xs">Badges</div>
+      <div class="surface rounded-xl p-3 text-xs">Skull cards</div>
+      <div class="surface rounded-xl p-3 text-xs">Modals</div>
+    </div>
+  </section>
+
+  <!-- LAYOUT -->
+  <main class="mx-auto grid w-[min(1200px,94%)] grid-cols-1 gap-4 py-4 md:grid-cols-[1.25fr_0.75fr]">
+    <!-- TIMELINE -->
+    <section class="surface relative rounded-2xl p-4 shadow-card">
+      <div class="mb-2 flex items-center justify-between">
+        <div class="text-sm text-slate-400">Silk pulse timeline</div>
+        <div id="lastUpdated" class="text-xs text-slate-500">Last updated just now</div>
+      </div>
+      <div id="timelineWrap" class="relative h-[380px] w-full overflow-hidden rounded-xl border border-white/10">
+        <svg id="timelineSVG" class="h-full w-full" viewBox="0 0 1200 380" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="pulseStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#4c8dff"/>
+              <stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient>
+            <linearGradient id="pulseFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(76,141,255,0.35)"/>
+              <stop offset="70%" stop-color="rgba(236,72,153,0.1)"/>
+              <stop offset="100%" stop-color="rgba(12,18,34,0)"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3.2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g id="grid"></g>
+          <g id="spikes"></g>
+          <path id="pulseArea" d="" fill="url(#pulseFill)" opacity="0.7"></path>
+          <path id="pulsePath" d="" stroke="url(#pulseStroke)" stroke-width="2.5" fill="none" filter="url(#glow)"/>
+          <g id="dots"></g>
+        </svg>
+        <div id="tooltip" class="tooltip hidden rounded-md bg-black/80 px-2 py-1 text-xs shadow-lg"></div>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">Space toggles play. Plus and minus adjust zoom. Click a skull to open the story.</div>
+    </section>
+
+    <!-- CARDS -->
+    <aside class="surface rounded-2xl p-4 shadow-card">
+      <div class="mb-2 flex items-center justify-between">
+        <h2 class="font-display text-lg">Skull cards</h2>
+        <div class="flex items-center gap-2">
+          <button id="btnImport" class="text-xs surface rounded px-2 py-1">Import JSON</button>
+          <button id="btnExport" class="text-xs surface rounded px-2 py-1">Export JSON</button>
+          <button id="btnClearFilters" class="text-xs text-slate-400 underline">Clear filters</button>
+        </div>
+      </div>
+      <input id="fileInput" type="file" accept="application/json" class="hidden" />
+      <div id="cards" class="grid max-h-[420px] grid-cols-1 gap-3 overflow-y-auto pr-1 no-scrollbar"></div>
+    </aside>
+  </main>
+
+  <!-- MODAL -->
+  <div id="modal" class="invisible fixed inset-0 z-50 grid place-items-center opacity-0 transition-opacity">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="surface relative w-[min(900px,92%)] rounded-2xl p-6 shadow-card">
+      <button id="modalClose" class="absolute right-3 top-3 rounded-md bg-white/10 px-2 py-1 text-xs">Esc</button>
+      <div class="flex items-start gap-4">
+        <div class="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-pulse-500 to-roseglass-500 shadow-glow">
+          <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 2C7 2 3 6 3 11c0 3.5 2 6.5 5 7.8V21a1 1 0 0 0 1 1h1v-2h4v2h1a1 1 0 0 0 1-1v-2.2c3-1.3 5-4.3 5-7.8 0-5-4-9-9-9Zm-3 9h2v2H9v-2Zm6 0h-2v2h2v-2Z" fill="#fff"/></svg>
+        </div>
+        <div class="grow">
+          <h3 id="mTitle" class="font-display text-xl"></h3>
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+            <span id="mDate"></span>
+            <span id="mPlatform" class="rounded-full bg-white/10 px-2 py-0.5"></span>
+            <span id="mCreator" class="rounded-full bg-white/10 px-2 py-0.5"></span>
+            <span id="mOrg" class="rounded-full bg-white/10 px-2 py-0.5"></span>
+          </div>
+          <p id="mSummary" class="mt-3 text-sm text-slate-200"></p>
+
+          <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div class="surface rounded-xl p-3">
+              <div class="text-xs text-slate-400 mb-1">Failure modes</div>
+              <ul id="mFailure" class="text-sm list-disc list-inside"></ul>
+            </div>
+            <div class="surface rounded-xl p-3">
+              <div class="text-xs text-slate-400 mb-1">Metrics</div>
+              <div id="mMetrics" class="text-sm"></div>
+            </div>
+            <div class="surface rounded-xl p-3">
+              <div class="text-xs text-slate-400 mb-1">Tags</div>
+              <div id="mTags" class="flex flex-wrap gap-2 text-xs"></div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="text-xs text-slate-400 mb-1">Sources</div>
+            <div id="mSources" class="flex flex-wrap gap-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEMPLATE -->
+  <template id="cardTemplate">
+    <div class="card surface group rounded-xl p-4 hover:bg-white/10 transition shadow-card">
+      <div class="mb-2 flex items-center gap-2">
+        <div class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-pulse-500 to-roseglass-500 shadow-glow opacity-90 group-hover:opacity-100">
+          <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 2C7 2 3 6 3 11c0 3.5 2 6.5 5 7.8V21a1 1 0 0 0 1 1h1v-2h4v2h1a1 1 0 0 0 1-1v-2.2c3-1.3 5-4.3 5-7.8 0-5-4-9-9-9Zm-3 9h2v2H9v-2Zm6 0h-2v2h2v-2Z" fill="#fff"/></svg>
+        </div>
+        <div>
+          <div class="title font-medium"></div>
+          <div class="mt-0.5 text-[11px] text-slate-400"><span class="date"></span> • <span class="platform badge"></span> • <span class="creator"></span></div>
+        </div>
+      </div>
+      <div class="summary text-sm text-slate-200"></div>
+      <div class="mt-3 flex flex-wrap gap-2 text-[11px]"></div>
+    </div>
+  </template>
+
+  <script>
+    // ===== Util =====
+    const fmt = (d) => new Date(d).toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'});
+    const byId = (arr) => Object.fromEntries(arr.map(x => [x.id, x]));
+
+    // ===== Real starter dataset (curated with real sources) =====
+    // Each entry includes reputable links that you can click in the modal.
+    const REAL_EVENTS = [
+      {
+        id: "humane-ai-pin-review-2024-04-11",
+        title: "Humane AI Pin reviews land hard",
+        date: "2024-04-11",
+        platform: "blog",
+        creator: "Humane",
+        organization: "Humane",
+        app: "AI Pin",
+        summary: "Initial reviews call the $699 + $24/mo wearable unreliable and incomplete.",
+        failure_modes: ["thermal constraints", "missing core features", "hype mismatch"],
+        tags: ["wearable","agent","hardware"],
+        metrics: { spike_index: 3.4 },
+        sources: [
+          { label: "The Verge review", url: "https://www.theverge.com/24126502/humane-ai-pin-review" }
+        ]
+      },
+      {
+        id: "humane-ai-pin-warning-2024-06-05",
+        title: "Humane warns owners to stop using charging case",
+        date: "2024-06-05",
+        platform: "blog",
+        creator: "Humane",
+        organization: "Humane",
+        app: "AI Pin",
+        summary: "Company advises customers to immediately stop using the charge case due to battery safety risk.",
+        failure_modes: ["safety recall","battery"],
+        tags: ["hardware","safety"],
+        metrics: { spike_index: 2.6 },
+        sources: [
+          { label: "The Verge", url: "https://www.theverge.com/2024/6/5/24172377/humane-ai-pin-battery-case-issue-warning" }
+        ]
+      },
+      {
+        id: "humane-ai-pin-recall-2024-10-31",
+        title: "CPSC recall of Humane AI Pin charge case",
+        date: "2024-10-31",
+        platform: "blog",
+        creator: "Humane",
+        organization: "Humane",
+        app: "AI Pin Charge Case",
+        summary: "Official recall cites lithium battery fire hazard in the charge case accessory.",
+        failure_modes: ["safety recall","battery"],
+        tags: ["hardware","safety"],
+        metrics: { spike_index: 2.8 },
+        sources: [
+          { label: "CPSC recall", url: "https://www.cpsc.gov/Recalls/2025/Humane-Recalls-Charge-Case-Accessory-for-Ai-Pin-Due-to-Lithium-Battery-Fire-Hazard" },
+          { label: "The Verge coverage", url: "https://www.theverge.com/2024/10/31/24284691/humane-ai-pin-charge-case-recall-fire-hazard" }
+        ]
+      },
+      {
+        id: "humane-returns-2024-08-07",
+        title: "Report: Humane AI Pin returns outpaced sales",
+        date: "2024-08-07",
+        platform: "blog",
+        creator: "Humane",
+        organization: "Humane",
+        app: "AI Pin",
+        summary: "Report said more units were returned than sold between May and August 2024.",
+        failure_modes: ["refunds","poor user experience"],
+        tags: ["hardware","market response"],
+        metrics: { spike_index: 2.2 },
+        sources: [
+          { label: "The Verge report", url: "https://www.theverge.com/2024/8/7/24211339/humane-ai-pin-more-daily-returns-than-sales" }
+        ]
+      },
+      {
+        id: "rabbit-r1-app-2024-04-30",
+        title: "Rabbit R1 turns out to be just an Android app",
+        date: "2024-04-30",
+        platform: "blog",
+        creator: "Rabbit Inc.",
+        organization: "Rabbit",
+        app: "R1",
+        summary: "Investigation showed the core experience ran as an Android app, undermining the hardware pitch.",
+        failure_modes: ["hype mismatch","positioning"],
+        tags: ["hardware","agent"],
+        metrics: { spike_index: 2.5 },
+        sources: [
+          { label: "The Verge", url: "https://www.theverge.com/2024/4/30/24145838/rabbit-r1-android-app-pixel-6a" }
+        ]
+      },
+      {
+        id: "nothing-chats-pulled-2023-11-18",
+        title: "Nothing Chats pulled over Sunbird plaintext privacy flaw",
+        date: "2023-11-18",
+        platform: "blog",
+        creator: "Nothing / Sunbird",
+        organization: "Nothing",
+        app: "Nothing Chats",
+        summary: "The iMessage-on-Android bridge was removed from Play Store after reports of unencrypted messages.",
+        failure_modes: ["security/privacy"],
+        tags: ["mobile","messaging"],
+        metrics: { spike_index: 2.0 },
+        sources: [
+          { label: "The Verge", url: "https://www.theverge.com/2023/11/18/23966781/nothing-chats-imessage-unencrypted-sunbird-plaintext" }
+        ]
+      },
+      {
+        id: "quibi-shutdown-2020-10-21",
+        title: "Quibi shuts down six months after launch",
+        date: "2020-10-21",
+        platform: "blog",
+        creator: "Quibi",
+        organization: "Quibi",
+        app: "Quibi",
+        summary: "Mobile-only short-form streaming service ends operations.",
+        failure_modes: ["product-market fit","distribution"],
+        tags: ["media","video"],
+        metrics: { spike_index: 2.3 },
+        sources: [
+          { label: "The Verge", url: "https://www.theverge.com/2020/10/21/21527197/quibi-streaming-service-mobile-shutting-down-end-katzenberg" },
+          { label: "Verge explainer", url: "https://www.theverge.com/2020/10/22/21528404/quibi-shut-down-cost-subscribers-content-tv-movies-katzenberg-whitman" }
+        ]
+      },
+      {
+        id: "juicero-hands-2017-04-19",
+        title: "Bloomberg shows Juicero packs can be squeezed by hand",
+        date: "2017-04-19",
+        platform: "blog",
+        creator: "Juicero",
+        organization: "Juicero",
+        app: "Juicero Press",
+        summary: "Bloomberg demo undercuts the core value proposition of a $400 juicer.",
+        failure_modes: ["value proposition","pricing"],
+        tags: ["hardware","IoT"],
+        metrics: { spike_index: 2.1 },
+        sources: [
+          { label: "Bloomberg feature", url: "https://www.bloomberg.com/news/features/2017-04-19/silicon-valley-s-400-juicer-may-be-feeling-the-squeeze" }
+        ]
+      },
+      {
+        id: "juicero-shutdown-2017-09-01",
+        title: "Juicero shuts down after viral backlash",
+        date: "2017-09-01",
+        platform: "blog",
+        creator: "Juicero",
+        organization: "Juicero",
+        app: "Juicero",
+        summary: "After months of criticism and a price cut, Juicero ceases operations.",
+        failure_modes: ["market rejection"],
+        tags: ["hardware","IoT"],
+        metrics: { spike_index: 1.7 },
+        sources: [
+          { label: "The Guardian", url: "https://www.theguardian.com/technology/2017/sep/01/juicero-silicon-valley-shutting-down" }
+        ]
+      },
+      {
+        id: "essential-shutdown-2020-02-12",
+        title: "Essential, maker of the PH-1, shuts down",
+        date: "2020-02-12",
+        platform: "blog",
+        creator: "Essential",
+        organization: "Essential",
+        app: "PH-1",
+        summary: "Andy Rubin’s smartphone startup closes after weak sales and canceled follow-up devices.",
+        failure_modes: ["camera quality","sales"],
+        tags: ["mobile","android"],
+        metrics: { spike_index: 1.8 },
+        sources: [
+          { label: "The Verge", url: "https://www.theverge.com/2020/2/12/21134985/essential-phone-shutting-down-andy-rubin-startup" }
+        ]
+      },
+      {
+        id: "clubhouse-decline-2021-05-03",
+        title: "Clubhouse downloads plunge after early boom",
+        date: "2021-05-03",
+        platform: "blog",
+        creator: "Clubhouse",
+        organization: "Alpha Exploration",
+        app: "Clubhouse",
+        summary: "Sensor Tower data shows April downloads fell to ~922k from 9.6M in February 2021.",
+        failure_modes: ["competition","retention"],
+        tags: ["audio","social"],
+        metrics: { spike_index: 1.6 },
+        sources: [
+          { label: "Business Insider", url: "https://www.businessinsider.com/clubhouse-downloads-900000-in-april-2021-5" }
+        ]
+      },
+      {
+        id: "stadia-shutdown-2022-09-29",
+        title: "Google announces Stadia shutdown with refunds",
+        date: "2022-09-29",
+        platform: "blog",
+        creator: "Google",
+        organization: "Google",
+        app: "Stadia",
+        summary: "Cloud gaming service to shut down January 2023 and offer refunds.",
+        failure_modes: ["product-market fit","adoption"],
+        tags: ["gaming","cloud"],
+        metrics: { spike_index: 1.9 },
+        sources: [
+          { label: "Axios", url: "https://www.axios.com/2022/09/29/google-stadia-shutdown" },
+          { label: "Google FAQ", url: "https://support.google.com/stadia/answer/12790109?hl=en" }
+        ]
+      }
+    ];
+
+    // ===== Data adapter (single-file only, optional live pulls) =====
+    const Data = {
+      all: [...REAL_EVENTS], // start with real, curated data
+      async fetchHN(queries) {
+        // CORS-friendly public API
+        const acc = [];
+        for (const q of queries) {
+          const u = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(q)}&tags=story&hitsPerPage=10`;
+          try {
+            const r = await fetch(u);
+            if (!r.ok) continue;
+            const j = await r.json();
+            for (const h of (j.hits||[])) {
+              acc.push({
+                id: `hn:${h.objectID}`,
+                title: h.title,
+                date: new Date(h.created_at).toISOString(),
+                platform: "blog",
+                creator: h.author,
+                organization: null,
+                app: null,
+                summary: "",
+                failure_modes: [],
+                tags: ["hn"],
+                metrics: { spike_index: 1.0 },
+                sources: [{ label: "HN", url: `https://news.ycombinator.com/item?id=${h.objectID}` }]
+              });
+            }
+          } catch {}
+        }
+        return acc;
+      },
+      async fetchRSS(feedUrl, label = "Blog") {
+        // Use r.jina.ai as a simple read-only proxy that allows CORS
+        // Note: This is best-effort. If it fails, we skip quietly.
+        const via = `https://r.jina.ai/http/${feedUrl.replace(/^https?:\/\//,"")}`;
+        try {
+          const txt = await (await fetch(via)).text();
+          const dom = new DOMParser().parseFromString(txt, "text/xml");
+          const items = Array.from(dom.querySelectorAll("item")).slice(0, 20);
+          return items.map(it => ({
+            id: `rss:${it.querySelector("guid")?.textContent || it.querySelector("link")?.textContent}`,
+            title: it.querySelector("title")?.textContent || "",
+            date: new Date(it.querySelector("pubDate")?.textContent || Date.now()).toISOString(),
+            platform: "blog",
+            creator: it.querySelector("author")?.textContent || label,
+            organization: null,
+            app: null,
+            summary: it.querySelector("description")?.textContent?.replace(/<[^>]+>/g,"").slice(0,280) || "",
+            failure_modes: [],
+            tags: ["rss"],
+            metrics: { spike_index: 1.0 },
+            sources: [{ label, url: it.querySelector("link")?.textContent || "" }]
+          }));
+        } catch { return []; }
+      }
+    };
+
+    // ===== Timeline engine =====
+    const Timeline = {
+      svg:null, grid:null, spikes:null, dots:null, path:null, area:null,
+      width:1200, height:380, baseline:220, amp:70, zoom:1.0, speed:1.0,
+      playTL:null, domain:[new Date('2014-01-01'), new Date('2025-12-31')], data:[],
+
+      init() {
+        this.svg = document.getElementById('timelineSVG');
+        this.grid = document.getElementById('grid');
+        this.spikes = document.getElementById('spikes');
+        this.dots = document.getElementById('dots');
+        this.path = document.getElementById('pulsePath');
+        this.area = document.getElementById('pulseArea');
+        this.drawGrid();
+        this.makeAnimation();
+      },
+      setData(events) {
+        this.data = events.slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
+        const minD = this.data.length ? new Date(this.data[0].date) : this.domain[0];
+        const maxD = this.data.length ? new Date(this.data[this.data.length-1].date) : this.domain[1];
+        const pad = 1000*60*60*24*90;
+        this.domain = [new Date(minD.getTime()-pad), new Date(maxD.getTime()+pad)];
+        this.redraw();
+      },
+      xScale(d) { const [d0,d1]=this.domain; const t=(d-d0)/(d1-d0); const m=this.width*this.zoom; return Math.max(0, Math.min(this.width, t*m)); },
+      drawGrid() {
+        const g=this.grid; g.innerHTML='';
+        const rows=6, cols=12;
+        for(let i=0;i<=rows;i++){
+          const y=(this.height/(rows))*i;
+          const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+          ln.setAttribute('x1',0); ln.setAttribute('y1',y); ln.setAttribute('x2',this.width); ln.setAttribute('y2',y);
+          ln.setAttribute('stroke','var(--grid-line)'); ln.setAttribute('stroke-width',1); g.appendChild(ln);
+        }
+        for(let j=0;j<=cols;j++){
+          const x=(this.width/(cols))*j;
+          const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+          ln.setAttribute('x1',x); ln.setAttribute('y1',0); ln.setAttribute('x2',x); ln.setAttribute('y2',this.height);
+          ln.setAttribute('stroke','var(--grid-line)'); ln.setAttribute('stroke-width',1); g.appendChild(ln);
+        }
+      },
+      pulseFunc(x,t){
+        return (
+          Math.sin((x/90)+t*0.008*this.speed)*this.amp*0.8 +
+          Math.sin((x/23)+t*0.035*this.speed)*this.amp*0.18 +
+          Math.sin((x/7)+t*0.11*this.speed)*this.amp*0.05
+        );
+      },
+      buildPath(t=0){
+        const pts=[];
+        for(let x=0;x<=this.width;x+=4){
+          const y=this.baseline - this.pulseFunc(x,t);
+          pts.push([x,y]);
+        }
+        let d=''; for(let i=0;i<pts.length;i++){ const [x,y]=pts[i]; d+=(i===0?'M':'L')+x+' '+y+' '; }
+        let a=d+`L ${this.width} ${this.height} L 0 ${this.height} Z`;
+        return { d,a };
+      },
+      redraw(t=performance.now()){
+        const {d,a}=this.buildPath(t);
+        this.path.setAttribute('d', d);
+        this.area.setAttribute('d', a);
+        this.drawSpikesAndDots(t);
+      },
+      drawSpikesAndDots(t){
+        this.spikes.innerHTML=''; this.dots.innerHTML='';
+        const tooltip=document.getElementById('tooltip');
+        for(const ev of this.data){
+          const x=this.xScale(new Date(ev.date));
+          const y=this.baseline - this.pulseFunc(x,t);
+          const spike=document.createElementNS('http://www.w3.org/2000/svg','line');
+          spike.setAttribute('x1',x); spike.setAttribute('y1',this.height);
+          spike.setAttribute('x2',x); spike.setAttribute('y2',y);
+          spike.setAttribute('stroke','url(#pulseStroke)'); spike.setAttribute('stroke-width','1.5'); spike.setAttribute('opacity','0.85');
+          this.spikes.appendChild(spike);
+
+          const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+          dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('r',5);
+          dot.setAttribute('fill','white'); dot.setAttribute('stroke','#4c8dff'); dot.setAttribute('stroke-width',2);
+          dot.style.cursor='pointer';
+          dot.addEventListener('mouseenter',(e)=>{ tooltip.textContent=ev.title; tooltip.style.left=e.clientX+'px'; tooltip.style.top=e.clientY+'px'; tooltip.classList.remove('hidden'); });
+          dot.addEventListener('mouseleave',()=> tooltip.classList.add('hidden'));
+          dot.addEventListener('click',()=> openModal(ev));
+          this.dots.appendChild(dot);
+        }
+      },
+      makeAnimation(){
+        const tl=anime.timeline({autoplay:true, loop:true});
+        tl.add({targets:'#pulsePath', strokeDashoffset:[anime.setDashoffset,0], duration:6000, easing:'easeInOutSine'})
+          .add({targets:'#pulsePath', strokeDashoffset:[0,anime.setDashoffset], duration:6000, easing:'easeInOutSine'});
+        this.playTL=tl;
+        const render=(t)=>{
+          if(this.playTL && this.playTL.paused){ requestAnimationFrame(render); return; }
+          this.redraw(t); requestAnimationFrame(render);
+        };
+        requestAnimationFrame(render);
+      },
+      setZoom(z){ this.zoom=z; this.redraw(); },
+      setSpeed(s){ this.speed=s; },
+      play(){ this.playTL && this.playTL.play(); },
+      pause(){ this.playTL && this.playTL.pause(); }
+    };
+
+    // ===== Cards and modal =====
+    function renderCards(events){
+      const wrap=document.getElementById('cards'); wrap.innerHTML='';
+      const tpl=document.getElementById('cardTemplate');
+      for(const ev of events){
+        const node=tpl.content.cloneNode(true);
+        node.querySelector('.title').textContent=ev.title;
+        node.querySelector('.date').textContent=fmt(ev.date);
+        node.querySelector('.platform').textContent=ev.platform;
+        node.querySelector('.creator').textContent=ev.creator || '';
+        node.querySelector('.summary').textContent=ev.summary || '';
+        const pills=node.querySelector('.flex.flex-wrap.gap-2');
+        (ev.sources||[]).forEach(s=>{
+          const a=document.createElement('a'); a.textContent=s.label; a.href=s.url; a.target='_blank';
+          a.className='source-link rounded-full bg-white/10 px-2 py-1 hover:bg-white/20'; pills.appendChild(a);
+        });
+        node.querySelector('.card').addEventListener('click',()=> openModal(ev));
+        wrap.appendChild(node);
+      }
+    }
+
+    function openModal(ev){
+      document.getElementById('mTitle').textContent=ev.title;
+      document.getElementById('mDate').textContent=fmt(ev.date);
+      document.getElementById('mPlatform').textContent=ev.platform;
+      document.getElementById('mCreator').textContent=ev.creator||'';
+      document.getElementById('mOrg').textContent=ev.organization||'';
+      document.getElementById('mSummary').textContent=ev.summary||'';
+
+      const ul=document.getElementById('mFailure'); ul.innerHTML='';
+      (ev.failure_modes||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x; ul.appendChild(li); });
+
+      const mm=document.getElementById('mMetrics');
+      const m=ev.metrics||{};
+      mm.innerHTML = `<div>Spike index: <b>${m.spike_index??'–'}</b></div>`;
+
+      const tg=document.getElementById('mTags'); tg.innerHTML='';
+      (ev.tags||[]).forEach(t=>{ const b=document.createElement('span'); b.className='rounded-full bg-white/10 px-2 py-1'; b.textContent=t; tg.appendChild(b); });
+
+      const srcs=document.getElementById('mSources'); srcs.innerHTML='';
+      (ev.sources||[]).forEach(s=>{ const a=document.createElement('a'); a.href=s.url; a.target='_blank'; a.textContent=s.label; a.className='source-link rounded-full bg-white/10 px-2 py-1 hover:bg-white/20'; srcs.appendChild(a); });
+
+      const mod=document.getElementById('modal'); mod.classList.remove('invisible'); requestAnimationFrame(()=>{ mod.style.opacity=1; });
+    }
+    function closeModal(){ const m=document.getElementById('modal'); m.style.opacity=0; setTimeout(()=> m.classList.add('invisible'), 200); }
+
+    // ===== State + filtering =====
+    const State = { filter:'all', query:'', all:[...REAL_EVENTS] };
+    function applyFilters(){
+      const f=State.filter, q=State.query.toLowerCase();
+      let out=State.all.slice();
+      if(f!=='all') out = out.filter(e=> e.platform===f);
+      if(q) out = out.filter(e =>
+        (e.title+e.summary+(e.creator||'')+(e.app||'')+(e.organization||'')).toLowerCase().includes(q)
+      );
+      Timeline.setData(out); renderCards(out);
+    }
+
+    // ===== Import / Export =====
+    function exportJSON(){
+      const data=JSON.stringify(State.all, null, 2);
+      const blob=new Blob([data], {type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='pulse-events-real.json'; a.click();
+      setTimeout(()=> URL.revokeObjectURL(url), 3000);
+    }
+    function importJSON(file){
+      const reader=new FileReader();
+      reader.onload=(e)=>{ try{ const json=JSON.parse(e.target.result); if(Array.isArray(json)){ State.all=json; applyFilters(); } }catch{} };
+      reader.readAsText(file);
+    }
+
+    // ===== Live pulls (optional, single-file friendly) =====
+    async function refreshLiveIfEnabled(){
+      const hnOn = document.getElementById('liveHN').checked;
+      const rssOn = document.getElementById('liveRSS').checked;
+      let additions = [];
+
+      if (hnOn){
+        additions = additions.concat(await Data.fetchHN([
+          "Humane AI Pin","Rabbit R1","Nothing Chats","Quibi","Juicero","Essential Phone","Clubhouse","Google Stadia"
+        ]));
+      }
+      if (rssOn){
+        const rssFeeds = [
+          { url: "https://www.theverge.com/rss/index.xml", label: "The Verge" },
+          { url: "https://www.theguardian.com/uk/technology/rss", label: "The Guardian" },
+          { url: "https://techcrunch.com/feed/", label: "TechCrunch" }
+        ];
+        for (const f of rssFeeds){
+          additions = additions.concat(await Data.fetchRSS(f.url, f.label));
+        }
+      }
+
+      if (additions.length){
+        const map = byId(State.all);
+        for (const a of additions){ if (a && a.id && !map[a.id]) map[a.id]=a; }
+        State.all = Object.values(map).sort((a,b)=> new Date(a.date)-new Date(b.date));
+        document.getElementById('lastUpdated').textContent = 'Last updated ' + new Date().toLocaleTimeString();
+        applyFilters();
+      }
+    }
+
+    // ===== Boot =====
+    window.addEventListener('DOMContentLoaded', ()=>{
+      // Init timeline and render
+      Timeline.init(); Timeline.setData(State.all); renderCards(State.all);
+
+      // Controls
+      document.getElementById('zoom').addEventListener('input', e=> Timeline.setZoom(parseFloat(e.target.value)));
+      document.getElementById('speed').addEventListener('input', e=> Timeline.setSpeed(parseFloat(e.target.value)));
+      document.getElementById('btnPlay').addEventListener('click', ()=> Timeline.play());
+      document.getElementById('btnPause').addEventListener('click', ()=> Timeline.pause());
+      document.getElementById('search').addEventListener('input', e=> { State.query=e.target.value; applyFilters(); });
+
+      document.querySelectorAll('.chip').forEach(ch=>{
+        ch.classList.add('rounded-full','bg-white/5','px-2','py-1','text-xs','hover:bg-white/15');
+        ch.addEventListener('click', ()=>{
+          document.querySelectorAll('.chip').forEach(c=> c.classList.remove('active','ring-focus'));
+          ch.classList.add('active','ring-focus');
+          State.filter = ch.dataset.filter; applyFilters();
+        });
+      });
+      document.getElementById('btnClearFilters').addEventListener('click', ()=>{
+        State.filter='all'; State.query='';
+        document.getElementById('search').value='';
+        document.querySelectorAll('.chip').forEach(c=> c.classList.remove('active','ring-focus'));
+        document.querySelector('.chip[data-filter="all"]').classList.add('active','ring-focus');
+        applyFilters();
+      });
+
+      // Theme
+      const themePanel=document.getElementById('themePanel');
+      document.getElementById('btnTheme').addEventListener('click', ()=> themePanel.classList.toggle('hidden'));
+
+      // Modal
+      document.getElementById('modalClose').addEventListener('click', closeModal);
+      document.getElementById('modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
+      document.addEventListener('keydown', (e)=>{
+        if(e.key==='Escape') closeModal();
+        if(e.key===' '){ e.preventDefault(); if(Timeline.playTL && Timeline.playTL.paused) Timeline.play(); else Timeline.pause(); }
+        if(e.key==='+'){ const z=Math.min(3, Timeline.zoom+0.1); document.getElementById('zoom').value=z; Timeline.setZoom(z);}
+        if(e.key==='-'){ const z=Math.max(0.6, Timeline.zoom-0.1); document.getElementById('zoom').value=z; Timeline.setZoom(z);}
+      });
+
+      // Import / Export
+      document.getElementById('btnExport').addEventListener('click', exportJSON);
+      document.getElementById('btnImport').addEventListener('click', ()=> document.getElementById('fileInput').click());
+      document.getElementById('fileInput').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(f) importJSON(f); });
+
+      // Live toggles and cron
+      document.getElementById('liveHN').addEventListener('change', refreshLiveIfEnabled);
+      document.getElementById('liveRSS').addEventListener('change', refreshLiveIfEnabled);
+      setInterval(refreshLiveIfEnabled, 5*60*1000); // pseudo-cron every 5 minutes
+
+      // Download self as HTML
+      document.getElementById('btnDownload').addEventListener('click', (e)=>{
+        e.preventDefault();
+        const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'pulse-of-broken-vibes.html'; a.click();
+        setTimeout(()=> URL.revokeObjectURL(url), 5000);
+      });
+    });
+  </script>
+
+  <!--
+    Notes
+    - This file ships with a vetted dataset (REAL_EVENTS) pointing at real sources.
+    - Optional live pulls are single-file friendly:
+      * HN Algolia API has permissive CORS.
+      * RSS goes through r.jina.ai reader that allows CORS for public pages.
+    - LinkedIn, Reddit OAuth, and X search are not embedded to avoid secrets and ToS issues in a raw HTML.
+    - You can still import your own JSON via the Import button.
+  -->
+</body>
+</html>
